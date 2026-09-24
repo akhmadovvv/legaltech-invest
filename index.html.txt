@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LegalTech-Invest — Due Diligence Platformasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-6">
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8 border-b border-slate-700 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">⚖️ LegalTech-Invest Pro</h1>
+                <p class="text-slate-400 text-sm mt-1">AI-powered Legal Due Diligence & Risk Analytics Platform</p>
+            </div>
+            <span class="bg-blue-900/50 text-blue-300 border border-blue-700 px-3 py-1 rounded-full text-xs">v2.0 Advanced</span>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Form -->
+            <div class="lg:col-span-5 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl self-start">
+                <h2 class="text-xl font-semibold mb-4 text-slate-200">🔍 Tahlil Uchun Ma'lumotlar</h2>
+                <form id="auditForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Kompaniya Nomi</label>
+                        <input type="text" id="companyName" required value="TechInvest MCHJ" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">STIR (INN)</label>
+                        <input type="text" id="tin" required value="309876543" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Soha</label>
+                        <select id="sector" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:outline-none focus:border-blue-500">
+                            <option value="IT va FinTech">IT va FinTech</option>
+                            <option value="Qurilish va Ko'chmas mulk">Qurilish va Ko'chmas mulk</option>
+                            <option value="Chakana savdo">Chakana savdo</option>
+                            <option value="Ishlab chiqarish">Ishlab chiqarish</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">📄 Hujjat / Shartnoma (PDF) yuklash</label>
+                        <input type="file" id="fileInput" accept=".pdf,.docx,.txt" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-sm text-slate-400 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white hover:file:bg-blue-500">
+                    </div>
+                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded transition flex justify-center items-center gap-2">
+                        <span>🤖 AI Tahlilni Boshlash</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Report and Chart -->
+            <div class="lg:col-span-7 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-slate-200">📊 Due Diligence Hisoboti</h2>
+                    <button id="downloadPdfBtn" onclick="downloadPDF()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded transition flex items-center gap-1">
+                        📥 PDF Yuklab Olish
+                    </button>
+                </div>
+
+                <div id="placeholder" class="text-slate-500 text-center py-20">
+                    Kompaniya ma'lumotlarini kiriting va AI tahlilni bosing.
+                </div>
+
+                <div id="reportContent" class="hidden space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                            <span class="text-xs text-slate-400 block">Umumiy Ishonch Indeksi</span>
+                            <span id="score" class="text-3xl font-bold text-green-400">0/100</span>
+                        </div>
+                        <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                            <span class="text-xs text-slate-400 block">Tahlil Etilgan Hujjat</span>
+                            <span id="docStatus" class="text-sm font-semibold text-blue-300 truncate block mt-1">Mavjud emas</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 flex justify-center" style="height: 220px;">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-300 mb-2">Aniqlovlar va Risk Omillari:</h3>
+                        <div id="riskList" class="space-y-2 text-xs"></div>
+                    </div>
+
+                    <div class="p-3 bg-blue-950/50 border border-blue-800 rounded text-xs">
+                        <span class="font-semibold text-blue-300 block mb-1">Ekspert Tavsiyasi:</span>
+                        <p id="recommendation" class="text-slate-300"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        document.getElementById('auditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerText = '⏳ Tahlil qilinmoqda...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('company_name', document.getElementById('companyName').value);
+            formData.append('tin', document.getElementById('tin').value);
+            formData.append('sector', document.getElementById('sector').value);
+            
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files[0]) {
+                formData.append('file', fileInput.files[0]);
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+
+                document.getElementById('placeholder').classList.add('hidden');
+                document.getElementById('reportContent').classList.remove('hidden');
+                document.getElementById('downloadPdfBtn').classList.remove('hidden');
+
+                document.getElementById('score').innerText = result.overall_score + '/100';
+                document.getElementById('docStatus').innerText = result.document_analyzed ? '📄 ' + result.doc_name : '❌ Yuklanmadi';
+                document.getElementById('recommendation').innerText = result.recommendation;
+
+                const riskList = document.getElementById('riskList');
+                riskList.innerHTML = '';
+                result.risks.forEach(r => {
+                    const badge = r.risk_level === 'High' ? 'bg-red-900/60 text-red-300 border-red-700' : (r.risk_level === 'Medium' ? 'bg-yellow-900/60 text-yellow-300 border-yellow-700' : 'bg-green-900/60 text-green-300 border-green-700');
+                    riskList.innerHTML += `
+                        <div class="bg-slate-900 p-2.5 rounded border border-slate-700/60 flex justify-between items-start gap-2">
+                            <div>
+                                <strong class="text-slate-200">${r.category}:</strong>
+                                <p class="text-slate-400 mt-0.5">${r.description}</p>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded border ${badge} font-semibold">${r.risk_level}</span>
+                        </div>
+                    `;
+                });
+
+                renderChart(result.financial_score, result.legal_score, result.compliance_score);
+
+            } catch (err) {
+                alert('Serverga ulanib bo‘lmadi! Backend server yoqilganini tekshiring.');
+            } finally {
+                submitBtn.innerText = '🤖 AI Tahlilni Boshlash';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function renderChart(financial, legal, compliance) {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Moliyaviy Barqarorlik', 'Huquqiy Toza Rozilik', 'Komplaens va Soliq'],
+                    datasets: [{
+                        label: 'Kompaniya Ko\'rsatkichlari (%)',
+                        data: [financial, legal, compliance],
+                        backgroundColor: 'rgba(59, 130, 246, 0.25)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#60a5fa'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#334155' },
+                            grid: { color: '#334155' },
+                            pointLabels: { color: '#94a3b8', font: { size: 10 } },
+                            ticks: { display: false, beginAtZero: true, max: 100 }
+                        }
+                    },
+                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } }
+                }
+            });
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('reportContent');
+            const companyName = document.getElementById('companyName').value;
+            const opt = {
+                margin:       0.5,
+                filename:     `Due_Diligence_${companyName}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, backgroundColor: '#0f172a' },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>
